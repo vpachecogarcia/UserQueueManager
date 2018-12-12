@@ -25,6 +25,8 @@ public class AccesActivity extends AppCompatActivity {
     private EditText queue_code;
     private EditText username;
     private Button btn_acces;
+    private User user;
+
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -47,18 +49,28 @@ public class AccesActivity extends AppCompatActivity {
 
     public void check(){
         String code = queue_code.getText().toString();
+        String name = username.getText().toString();
+        Boolean state = false;
+        user = new User(name, 0, state.equals(("true")));
 
-        db.collection("Queues").whereEqualTo(code, true).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        db.collection("Queues").document(code).collection("Users").add(user);
+
+        /*db.collection("Queues").whereEqualTo(code, true).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()){
                     for (QueryDocumentSnapshot document : task.getResult()){
 
                         Toast.makeText(getApplicationContext(),document.getId(),Toast.LENGTH_LONG).show();
+                        try {
+                            wait(3000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
-        });
+        });*/
     }
 
 }
