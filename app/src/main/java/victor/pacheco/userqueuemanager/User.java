@@ -6,7 +6,7 @@ public class User {
     private int waiting_time;
     private boolean state;
 
-
+    User(){}
     public User(String usr_id, int waiting_time, boolean equals) {
         this.usr_id = usr_id;
         this.waiting_time = waiting_time;
