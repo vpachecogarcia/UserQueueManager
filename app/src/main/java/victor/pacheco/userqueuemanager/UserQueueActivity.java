@@ -42,14 +42,38 @@ public class UserQueueActivity extends AppCompatActivity {
 
 
 
-        db.collection("cues").document("1").addSnapshotListener(new EventListener<DocumentSnapshot>() {
-
+        db.collection("Queues").addSnapshotListener(new EventListener<QuerySnapshot>() { // actualiza la queue_set_list con
+            // la lista que tenemos en firebase
             @Override
-            public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
-               /* waiting_time.setText(documentSnapshot.getString("1"));
-                String w_time = documentSnapshot.getString("slot_time");
-                Toast.makeText(getApplicationContext(), w_time , Toast.LENGTH_SHORT).show();    */        }
+            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                    Queue q = doc.toObject(Queue.class);
+                    String idqueue = q.setId(doc.getId());
+                    int slottime = db.collection("Queues").document(idqueue).get("slot_time");
+                    int nUser = db.collection("Queues").document(idqueue).get("numuser");
+
+                    int wait_t= slottime*nUser;
+                    waiting_time.setText(wait_t);
+
+
+                }
+            }
         });
+
+        /* Puede que el slot time se obtenga asi:
+
+        DocumentReference docRef = db.collection("Queues").document(idqueue);
+            docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+        @Override
+         public void onSuccess(DocumentSnapshot documentSnapshot) {
+        Queue q = documentSnapshot.toObject(Queue.class);
+        int slottime = q.getSlot_time;
+
+        int wait_t= slottime*q.getNumuser;
+        waiting_time.setText(wait_t);
+         }
+            });
+         */
 
     }
 

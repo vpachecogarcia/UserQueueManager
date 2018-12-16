@@ -67,6 +67,14 @@
           }
         },
         {
+          "client_id": "646842537588-pgterkjor69bh584usltee848oodnesh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "victor.pacheco.userqueuemanager",
+            "certificate_hash": "71900c0264046229ff3efb1892fa06e155d3ee9e"
+          }
+        },
+        {
           "client_id": "646842537588-bkoquato4kvg78kn9pbpsds2bp3rb9ba.apps.googleusercontent.com",
           "client_type": 3
         }
