@@ -48,14 +48,8 @@ public class UserQueueActivity extends AppCompatActivity {
             public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
                 for (DocumentSnapshot doc : queryDocumentSnapshots) {
                     Queue q = doc.toObject(Queue.class);
-                    String idqueue = q.setId(doc.getId());
-                    int slottime = db.collection("Queues").document(idqueue).get("slot_time");
-                    int nUser = db.collection("Queues").document(idqueue).get("numuser");
-
-                    int wait_t= slottime*nUser;
-                    waiting_time.setText(wait_t);
-
-
+                    q.setId(doc.getId());
+                    waiting_time.setText(q.getSlot_time() * q.getNumuser());
                 }
             }
         });
