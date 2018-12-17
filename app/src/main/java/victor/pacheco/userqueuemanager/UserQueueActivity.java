@@ -27,6 +27,9 @@ import javax.annotation.Nullable;
 
 public class UserQueueActivity extends AppCompatActivity {
     private TextView waiting_time;
+    private String queueId;
+    private String username;
+
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
@@ -39,10 +42,14 @@ public class UserQueueActivity extends AppCompatActivity {
         setContentView(R.layout.activity_user_queue);
 
         waiting_time = findViewById(R.id.waiting_time);
+        queueId = getIntent().getStringExtra("queueId");
+        username = getIntent().getStringExtra("username");
 
 
 
-        db.collection("Queues").addSnapshotListener(new EventListener<QuerySnapshot>() { // actualiza la queue_set_list con
+
+
+        /*db.collection("Queues").addSnapshotListener(new EventListener<QuerySnapshot>() { // actualiza la queue_set_list con
             // la lista que tenemos en firebase
             @Override
             public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
@@ -52,23 +59,12 @@ public class UserQueueActivity extends AppCompatActivity {
                     waiting_time.setText(q.getSlot_time() * q.getNumuser());
                 }
             }
-        });
+        });*/
 
-        /* Puede que el slot time se obtenga asi:
-
-        DocumentReference docRef = db.collection("Queues").document(idqueue);
-            docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-        @Override
-         public void onSuccess(DocumentSnapshot documentSnapshot) {
-        Queue q = documentSnapshot.toObject(Queue.class);
-        int slottime = q.getSlot_time;
-
-        int wait_t= slottime*q.getNumuser;
-        waiting_time.setText(wait_t);
-         }
-            });
-         */
-
+       /* Habrá que hacer que cuando el usuario le de al botón atrás, salga un alert de si está seguro
+        que quiere salir de la cola, pq sino no podrá entrar al usuario que habia creado (follón). Será el
+        mismo código que el utilizado para el botón salir de la cola
+        */
     }
 
 

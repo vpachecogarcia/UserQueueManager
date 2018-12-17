@@ -1,5 +1,6 @@
 package victor.pacheco.userqueuemanager;
 
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -11,12 +12,19 @@ import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.Nullable;
 
 import io.opencensus.tags.Tag;
 
@@ -26,7 +34,6 @@ public class AccesActivity extends AppCompatActivity {
     private EditText username;
     private Button btn_acces;
     private User user;
-
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -48,29 +55,27 @@ public class AccesActivity extends AppCompatActivity {
     }
 
     public void check(){
-        String code = queue_code.getText().toString();
-        String name = username.getText().toString();
+        final String code = queue_code.getText().toString();
+        final String name = username.getText().toString();
         Boolean state = false;
         user = new User(name, 0, state.equals(("true")));
 
         db.collection("Queues").document(code).collection("Users").add(user);
 
-        /*db.collection("Queues").whereEqualTo(code, true).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        db.collection("Queues").document(code).addSnapshotListener(new EventListener<DocumentSnapshot>() {
             @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                if (task.isSuccessful()){
-                    for (QueryDocumentSnapshot document : task.getResult()){
-
-                        Toast.makeText(getApplicationContext(),document.getId(),Toast.LENGTH_LONG).show();
-                        try {
-                            wait(3000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
+            public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
+                Queue q = documentSnapshot.toObject(Queue.class);
+                if (q.getNumuser() == 1){
+                    db.collection("Queues").document(code).update("current_user", name);
                 }
             }
-        });*/
+        });
+
+        Intent intent = new Intent(getApplicationContext(), UserQueueActivity.class);
+        intent.putExtra("queueId", code);
+        intent.putExtra("username", name);
+        startActivity(intent);
     }
 
 }
