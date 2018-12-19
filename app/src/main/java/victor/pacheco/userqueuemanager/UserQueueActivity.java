@@ -52,26 +52,29 @@ public class UserQueueActivity extends AppCompatActivity {
         // de momento se añade un valor constante hay que obtener el slot time y el numuser de su cola y multiplicarlos
         // Comento como obtendria yo el Slot time pero creo que esta mal
 
-        db.collection("Queues").document(queueId).collection("Users")
-                .whereEqualTo("usr_id", username)
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot doc : task.getResult()) {
-                                // Queue q = doc.toObject(Queue.class);
-                                // int s = q.getSlot_time();
-
-                                db.collection("Queues").document(queueId).collection("Users").document(doc.getId()).update("waiting_time",2);
+        db.collection("Queues").document(queueId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
+            @Override
+            public void onEvent(@Nullable DocumentSnapshot doc, @Nullable FirebaseFirestoreException e) {
+                Queue q = doc.toObject(Queue.class);
+                final Integer wt = q.getSlot_time()* q.getNumuser();
+                db.collection("Queues").document(queueId).collection("Users")
+                        .whereEqualTo("usr_id", username)
+                        .get()
+                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                if (task.isSuccessful()) {
+                                    // Hace falta este for ??
+                                    for (QueryDocumentSnapshot doc : task.getResult()) {
+                                        db.collection("Queues").document(queueId).collection("Users")
+                                                .document(doc.getId()).update("waiting_time",wt);
+                                        waiting_time.setText(wt.toString());
+                                    }
+                                }
                             }
-                        }
-                    }
-                });
-
-
-
-
+                        });
+            }
+        });
 
 
         /*db.collection("Queues").addSnapshotListener(new EventListener<QuerySnapshot>() { // actualiza la queue_set_list con
