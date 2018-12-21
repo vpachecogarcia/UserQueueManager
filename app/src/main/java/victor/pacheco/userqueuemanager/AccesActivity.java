@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -21,7 +22,7 @@ import javax.annotation.Nullable;
 public class AccesActivity extends AppCompatActivity {
 
     private EditText queue_code;
-    private EditText username;
+    private EditText user_name;
     private Button btn_acces;
     private User user;
 
@@ -34,35 +35,32 @@ public class AccesActivity extends AppCompatActivity {
 
         //Obtenemos referencias de los objetos de la pantalla
         queue_code = findViewById(R.id.queue_code);
-        username = findViewById(R.id.username);
+        user_name = findViewById(R.id.username);
         btn_acces = findViewById(R.id.btn_acces);
+
+
         btn_acces.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 check();
             }
         });
-
     }
     // Función para inicializar el campo current_user con el primer Usuario que entre en la cola
     public void check(){
-        final String code = queue_code.getText().toString();
-        final String name = username.getText().toString();
+        final String queueId = queue_code.getText().toString();
+        final String username = user_name.getText().toString();
         Boolean state = false;
-        user = new User(name, 0, state.equals(("true")));
-
-        db.collection("Queues").document(code).collection("Users").add(user).addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentReference> task) {
-                // Tan solo queremos que espere a haber añadido el usuario a la colección antes de cambiar de actividad
-            }
-        });
+        user = new User(username, 0, state.equals(("true")));
+        db.collection("Queues").document(queueId).collection("Users").add(user);
 
         // Una vez hemos accedido a la cola y actualizado datos en Firestore, abrimos UserQueueActivity
-        Intent intent = new Intent(getApplicationContext(), UserQueueActivity.class);
-        intent.putExtra("queueId", code);
-        intent.putExtra("username", name);
-        startActivity(intent);
+        Intent data = new Intent();
+        data.putExtra("queueId", queueId);
+        data.putExtra("username", username);
+        setResult(RESULT_OK, data);
+        finish();
+
     }
 
 }
