@@ -11,6 +11,8 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +36,11 @@ public class UserQueueActivity extends AppCompatActivity {
     private String queueId;
     private String username;
     private TextView minutes_label;
+    public boolean estado_user=false;
+    public boolean estado_delete=false;
+    private Button leave;
+    private Button back;
+
 
     private NotificationManagerCompat notificationManager;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -42,6 +49,7 @@ public class UserQueueActivity extends AppCompatActivity {
     public static final String SHARED_PREFS = "sharedPrefs";
     public static final String ID = "id";
     public static final String QUEUE = "queue";
+    public String id_user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,10 +58,27 @@ public class UserQueueActivity extends AppCompatActivity {
 
         waiting_time = findViewById(R.id.waiting_time);
         minutes_label = findViewById(R.id.minutes_label);
+        leave = findViewById(R.id.btn_leave);
+        back = findViewById(R.id.btn_be_back);
         notificationManager = NotificationManagerCompat.from(this);
 
         loadData();
         Toast.makeText(this,username+ "" + queueId, Toast.LENGTH_LONG).show();
+        leave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                deleteUser();
+            }
+        });
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                UserWillBeBack();
+            }
+        });
+
+
         if(username.equals("") && queueId.equals("")) {
 
             Intent intent = new Intent(this, AccesActivity.class);
@@ -62,8 +87,24 @@ public class UserQueueActivity extends AppCompatActivity {
             startActivityForResult(intent, CREATE_USER);
         }
         else actualiza_wt(queueId, username);
+
+
     }
 
+    public void UserWillBeBack(){
+        estado_user=true;
+        waiting_time.setText("You are in absent mode");
+        minutes_label.setText("");
+    }
+
+    public void deleteUser(){
+        estado_delete=true;
+
+        username="";
+        queueId="";
+       this.getSharedPreferences("sharedPrefs", 0).edit().clear().apply();
+        finish();
+    }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
@@ -121,6 +162,13 @@ public class UserQueueActivity extends AppCompatActivity {
                                             for (QueryDocumentSnapshot doc : task.getResult()) {
                                                 db.collection("Queues").document(queueId).collection("Users")
                                                         .document(doc.getId()).update("waiting_time", wt);
+                                                if(estado_user==true){
+                                                    db.collection("Queues").document(queueId).collection("Users").document(doc.getId()).update("state", true);
+                                                }
+                                                if(estado_delete==true){
+                                                    db.collection("Queues").document(queueId).collection("Users").document(doc.getId()).delete();
+
+                                                }
                                                 waiting_time.setText((wt_act).toString());
                                             }
                                         }
@@ -144,6 +192,8 @@ public class UserQueueActivity extends AppCompatActivity {
                                             for (QueryDocumentSnapshot doc : task.getResult()) {
                                                 db.collection("Queues").document(queueId).collection("Users")
                                                         .document(doc.getId()).update("waiting_time", wt);
+
+
                                                 waiting_time.setText("Just a few minutes...");
                                                 minutes_label.setText("");
                                                 notifica();

@@ -25,7 +25,6 @@ public class AccesActivity extends AppCompatActivity {
     private EditText user_name;
     private Button btn_acces;
     private User user;
-
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     @Override
@@ -45,6 +44,8 @@ public class AccesActivity extends AppCompatActivity {
                 check();
             }
         });
+
+
     }
     // Función para inicializar el campo current_user con el primer Usuario que entre en la cola
     public void check(){
@@ -62,5 +63,7 @@ public class AccesActivity extends AppCompatActivity {
         finish();
 
     }
+
+
 
 }
