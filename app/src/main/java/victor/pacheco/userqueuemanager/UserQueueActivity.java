@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -143,8 +144,10 @@ public class UserQueueActivity extends AppCompatActivity {
         db.collection("Queues").document(queueId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
             @Override
             public void onEvent(@Nullable DocumentSnapshot doc, @Nullable FirebaseFirestoreException e) {
-                Queue q = doc.toObject(Queue.class);
+                 Queue q = doc.toObject(Queue.class);
                 final Integer wt = ((q.getSlot_time() * q.getNumuser()) - q.getSlot_time());
+
+
                 new CountDownTimer((wt * 60 * 1000), 60000) {
                     Integer cont = -1;
 
@@ -170,6 +173,21 @@ public class UserQueueActivity extends AppCompatActivity {
 
                                                 }
                                                 waiting_time.setText((wt_act).toString());
+
+                                                db.collection("Queues").document(queueId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                                    @Override
+                                                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                                        Queue q = documentSnapshot.toObject(Queue.class);
+                                                        if(q.getCurrent_user().equals(username)){
+                                                            notifica();
+                                                        }
+                                                    }
+                                                });
+
+
+
+
+
                                             }
                                         }
                                     }
