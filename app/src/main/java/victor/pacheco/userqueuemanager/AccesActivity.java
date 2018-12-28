@@ -16,6 +16,8 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import javax.annotation.Nullable;
 
@@ -52,6 +54,18 @@ public class AccesActivity extends AppCompatActivity {
         final String queueId = queue_code.getText().toString();
         final String username = user_name.getText().toString();
         Boolean state = false;
+/* PARA SABER SI MI USER YA EXISTE, NO FUNCIONA EL THIS DENTRO DEL TOAST
+        db.collection("Queues").document(queueId).collection("Users")
+                .whereEqualTo("usr_id", username)
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                           @Override
+                                           public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                               if (task.isSuccessful()) {
+                                                   Toast.makeText(this, "Your user already exists", Toast.LENGTH_LONG).show();
+                                               }
+                                           }
+                                       } */
         user = new User(username, 0, state.equals(("true")));
         db.collection("Queues").document(queueId).collection("Users").add(user);
 

@@ -2,6 +2,7 @@ package victor.pacheco.userqueuemanager;
 
 import android.app.Notification;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.CountDownTimer;
@@ -9,6 +10,7 @@ import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -99,12 +101,25 @@ public class UserQueueActivity extends AppCompatActivity {
     }
 
     public void deleteUser(){
-        estado_delete=true;
 
-        username="";
-        queueId="";
-       this.getSharedPreferences("sharedPrefs", 0).edit().clear().apply();
-        finish();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Are you sure that you want to leave?");
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                estado_delete=true;
+
+                username="";
+                queueId="";
+                getSharedPreferences("sharedPrefs", 0).edit().clear().apply();
+                finish();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, null);
+        // Le pedimos al builder que finalmente cree el AlertDialog y lo mostramos directamente
+        builder.create().show();
+
+
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
