@@ -31,8 +31,7 @@ public class UserQueueActivity extends AppCompatActivity {
     private Integer wt;
     private String queueId;
     private String username;
-    public boolean estado_user=false;
-    public boolean estado_delete=false;
+    public boolean absent=false;
     private boolean called = false;
     private Button leave;
     private Button back;
@@ -54,9 +53,9 @@ public class UserQueueActivity extends AppCompatActivity {
         waiting_time = findViewById(R.id.waiting_time);
         leave = findViewById(R.id.btn_leave);
         back = findViewById(R.id.btn_be_back);
-
+        // Cargamos los datos de nuestro usuario (username, queueId y wt_seted
         loadData();
-
+        // Escuchamos los botones de ahora vuelvo y dejar la cola
         leave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -71,14 +70,15 @@ public class UserQueueActivity extends AppCompatActivity {
             }
         });
 
-
+        // Si no hemos registrado nuestro usuario y por tanto no pertenecemos a una cola
         if(username.equals("") && queueId.equals("")) {
-
+            // creamos el Intent y le enviamos datos a AccesActivity esperando que esta nos devuelva otros
             Intent intent = new Intent(this, AccesActivity.class);
             intent.putExtra("queueId", queueId);
             intent.putExtra("username", username);
             startActivityForResult(intent, CREATE_USER);
         }
+        // De lo contrario llamamos a las funciones que se encargan de actualizar el tiempo de espera y de notificarnos si es nuestro turno
         else {
             notifica();
             actualiza_wt(queueId, username);
@@ -94,7 +94,7 @@ public class UserQueueActivity extends AppCompatActivity {
         }*/
     }
 
-
+    // función para iniciar el servicio que realizará operaciones aun con la aplicación matada
     public void startService (){
         Intent serviceIntent = new Intent(this, ServiceActivity.class);
         serviceIntent.putExtra("wt", Integer.valueOf(wt));
@@ -109,30 +109,72 @@ public class UserQueueActivity extends AppCompatActivity {
     }
 
     public void UserWillBeBack(){
-        estado_user=true;
-        waiting_time.setText("You are in absent mode");
-    }
+        // Cuando presionamos el botón de ahora vuelvo, si estabamos ausentes nos devuelve al modo normal y viceversa
+        db.collection("Queues").document(queueId).collection("Users")
+                .whereEqualTo("usr_id", username)
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            for (QueryDocumentSnapshot doc : task.getResult()) {
+                                User u = doc.toObject(User.class);
+                                if (!u.isState()){
+                                    db.collection("Queues").document(queueId).collection("Users")
+                                            .document(doc.getId()).update("state", true);
+                                    waiting_time.setText("You are in absent mode");
+                                    wt_seted = false;
+                                    absent = true;
+                                    stopService();
+                                }
+                                else {
+                                    db.collection("Queues").document(queueId).collection("Users")
+                                            .document(doc.getId()).update("state", false);
+                                    absent = false;
+                                    set_wt(queueId,username);
+                                }
 
+                            }
+                        }
+                    }
+                });
+
+    }
+    // Mostramos un alertdialog si pulsa sobre dejar la cola. Si afirma, eliminamos el usuario de firestore así como las sharedPreferences
     public void deleteUser(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Are you sure that you want to leave?");
         builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                estado_delete=true;
-
+                // Accedemos ala colección Usuario cuyo id es el nuestro.
+                db.collection("Queues").document(queueId).collection("Users")
+                        .whereEqualTo("usr_id", username)
+                        .get()
+                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                if (task.isSuccessful()) {
+                                    for (QueryDocumentSnapshot doc : task.getResult()) {
+                                        db.collection("Queues").document(queueId).collection("Users").document(doc.getId()).delete();
+                                    }
+                                }
+                            }
+                        });
                 username="";
                 queueId="";
                 wt_seted = false;
                 getSharedPreferences("sharedPrefs", 0).edit().clear().apply();
                 finish();
             }
+
         });
         builder.setNegativeButton(android.R.string.cancel, null);
         // Le pedimos al builder que finalmente cree el AlertDialog y lo mostramos directamente
         builder.create().show();
     }
     @Override
+    //recibimos los datos de AccesActivity, y llamamos a set_wt y saveData
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case CREATE_USER:
@@ -147,14 +189,14 @@ public class UserQueueActivity extends AppCompatActivity {
                 super.onActivityResult(requestCode, resultCode,data);
         }
     }
-
+    // Carga los datos queueId, username y wt_seted guardados mediante sharedPreferences
     public void loadData(){
         SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         queueId = sharedPreferences.getString(QUEUE,"");
         username = sharedPreferences.getString(ID,"");
         wt_seted = sharedPreferences.getBoolean(WT_SET, false);
     }
-
+    // Guarda los datos queueId, username y wt_seted mediante sharedPreferences
     public void saveData(String queueId, String username, Boolean wt_seted){
         SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -164,33 +206,44 @@ public class UserQueueActivity extends AppCompatActivity {
         editor.putBoolean(WT_SET, wt_seted);
         editor.apply();
     }
-
+    // Inicia el tiempo de espera y llama al servicio, que partirá de ese tiempo de espera
     private void set_wt(final String queueId, final String username){
         db.collection("Queues").document(queueId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
             @Override
             public void onEvent(@Nullable DocumentSnapshot doc, @Nullable FirebaseFirestoreException e) {
+                // Si no se habia dado el wt antes (para no reiniciar el servicio y evitar bugs)
                 if (!wt_seted) {
                     Queue q = doc.toObject(Queue.class);
-                    wt = (q.getSlot_time() * (q.getNumuser()+1 - q.getCurrent_pos()));
-                    startService();
-                    wt_seted = true;
-                    actualiza_wt(queueId, username);
-                    db.collection("Queues").document(queueId).collection("Users")
-                            .whereEqualTo("usr_id", username)
-                            .get()
-                            .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                @Override
-                                public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                    if (task.isSuccessful()) {
-                                        for (QueryDocumentSnapshot doc : task.getResult()) {
-                                            db.collection("Queues").document(queueId).collection("Users")
-                                                    .document(doc.getId()).update("waiting_time", wt);
-                                            waiting_time.setText(wt.toString());
+                    // si eres el primero, te pide que entres directamente y anula que se muestre el wt por otro lado y que se te vuelva a llamar.
+                    if(q.getNumuser()==0){
+                        waiting_time.setText("Please, come in !");
+                        called = true;
+                        wt_seted = true;
+                    }
+                    // Por contra, calculamos el tiempo de espera en función del número de usuarios, la posición actual y el slot time e inicamos el servicio.
+                    else {
+                        wt = (q.getSlot_time() * (q.getNumuser()+1 - q.getCurrent_pos()));
+                        startService();
+                        wt_seted = true;
+                        actualiza_wt(queueId, username);
+                        db.collection("Queues").document(queueId).collection("Users")
+                                .whereEqualTo("usr_id", username)
+                                .get()
+                                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                        if (task.isSuccessful()) {
+                                            for (QueryDocumentSnapshot doc : task.getResult()) {
+                                                db.collection("Queues").document(queueId).collection("Users")
+                                                        .document(doc.getId()).update("waiting_time", wt);
+                                                waiting_time.setText(wt.toString());
 
+                                            }
                                         }
                                     }
-                                }
-                            });
+                                });
+                    }
+
                 }
             }
         });
@@ -231,9 +284,9 @@ public class UserQueueActivity extends AppCompatActivity {
                                             for (QueryDocumentSnapshot doc : task.getResult()) {
                                                 User u = doc.toObject(User.class);
                                                 wt = u.getWaiting_time();
-                                                if (wt == 0 && !called) {
+                                                if (wt == 0 && !called && !absent) {
                                                     waiting_time.setText("You are about to be called...");
-                                                } else if (!called) waiting_time.setText(wt.toString());
+                                                } else if (wt!=0 && !called && !absent) waiting_time.setText(wt.toString());
                                             }
                                         }
                                     }
@@ -242,101 +295,6 @@ public class UserQueueActivity extends AppCompatActivity {
                 });
             }
         });
-
-        /*
-        db.collection("Queues").document(queueId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
-            @Override
-            public void onEvent(@Nullable DocumentSnapshot doc, @Nullable FirebaseFirestoreException e) {
-
-                db.collection("Queues").document(queueId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable DocumentSnapshot doc, @Nullable FirebaseFirestoreException e) {
-                            db.collection("Queues").document(queueId).collection("Users")
-                                    .whereEqualTo("usr_id", username)
-                                    .get()
-                                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                            if (task.isSuccessful()) {
-                                                for (QueryDocumentSnapshot doc : task.getResult()) {
-                                                    User u = doc.toObject(User.class);
-                                                    wt_act = u.getWaiting_time();
-                                                    new CountDownTimer((wt_act * 60 * 1000), 60000) {
-
-                                                        @Override
-                                                        public void onTick(long l) {
-                                                            db.collection("Queues").document(queueId).collection("Users")
-                                                                    .whereEqualTo("usr_id", username)
-                                                                    .get()
-                                                                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                                                        @Override
-                                                                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                                                            if (task.isSuccessful()) {
-                                                                                // Hace falta este for ??
-                                                                                for (QueryDocumentSnapshot doc : task.getResult()) {
-                                                                                    db.collection("Queues").document(queueId).collection("Users")
-                                                                                            .document(doc.getId()).update("waiting_time", wt_act);
-                                                                                    if(estado_user==true){
-                                                                                        db.collection("Queues").document(queueId).collection("Users").document(doc.getId()).update("state", true);
-                                                                                    }
-                                                                                    if(estado_delete==true){
-                                                                                        db.collection("Queues").document(queueId).collection("Users").document(doc.getId()).delete();
-
-                                                                                    }
-                                                                                    waiting_time.setText((wt_act).toString());
-
-                                                                                    db.collection("Queues").document(queueId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                                                                                        @Override
-                                                                                        public void onSuccess(DocumentSnapshot documentSnapshot) {
-                                                                                            Queue q = documentSnapshot.toObject(Queue.class);
-                                                                                            if(q.getCurrent_user().equals(username) && !called){
-                                                                                                notifica();
-                                                                                                called = true;
-                                                                                            }
-                                                                                        }
-                                                                                    });
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    });
-                                                            cont++;
-                                                            wt_act --;
-                                                        }
-
-                                                        @Override
-                                                        public void onFinish() {
-                                                            db.collection("Queues")
-                                                                    .document(queueId)
-                                                                    .collection("Users")
-                                                                    .whereEqualTo("usr_id", username)
-                                                                    .get()
-                                                                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                                                        @Override
-                                                                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                                                            if (task.isSuccessful()) {
-                                                                                // Hace falta este for ??
-                                                                                for (QueryDocumentSnapshot doc : task.getResult()) {
-                                                                                    db.collection("Queues").document(queueId).collection("Users")
-                                                                                            .document(doc.getId()).update("waiting_time", 0);
-
-
-                                                                                    waiting_time.setText("Just a few minutes...");
-                                                                                    minutes_label.setText("");
-                                                                                    notifica();
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    });
-                                                        }
-                                                    }.start();
-                                                }
-                                            }
-                                        }
-                                    });
-                    }
-                });
-            }
-        });*/
     }
 
 }

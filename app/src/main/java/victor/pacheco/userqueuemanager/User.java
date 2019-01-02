@@ -6,7 +6,7 @@ public class User {
 
     private String usr_id;
     private int waiting_time;
-    private boolean state;
+    private boolean state = false;
     private String acces_time;
 
     User(){}
