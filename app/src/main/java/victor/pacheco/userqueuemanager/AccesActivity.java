@@ -1,6 +1,7 @@
 package victor.pacheco.userqueuemanager;
 
 import android.content.Intent;
+import android.icu.text.TimeZoneFormat;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +17,12 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.Query;
+
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Timer;
 
 import javax.annotation.Nullable;
 
@@ -52,7 +59,11 @@ public class AccesActivity extends AppCompatActivity {
         final String queueId = queue_code.getText().toString();
         final String username = user_name.getText().toString();
         Boolean state = false;
-        user = new User(username, 0, state.equals(("true")));
+
+        Calendar calendar = Calendar.getInstance(); // contine la fecha actual.
+        String acces_time = DateFormat.getTimeInstance(DateFormat.DEFAULT).format(calendar.getTime()); // contiene la hora actual
+
+        user = new User(username, 0, state.equals(("true")),acces_time);
         db.collection("Queues").document(queueId).collection("Users").add(user);
 
         // Una vez hemos accedido a la cola y actualizado datos en Firestore, abrimos UserQueueActivity

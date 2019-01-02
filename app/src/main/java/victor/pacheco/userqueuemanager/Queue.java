@@ -6,17 +6,18 @@ public class Queue {
     private String id;
     private String queue_name;
     private String current_user;
-    private Integer slot_time, hour, min, numuser;
+    private Integer slot_time, hour, min, numuser,  current_pos;
 
-    Queue() {}
+    Queue() { }
 
-    public Queue(String queue_name, Integer slot_time, Integer hour, Integer min, Integer numuser, String current_user) {
+    public Queue(String queue_name, Integer slot_time, Integer hour, Integer min, Integer numuser, String current_user, Integer current_pos) {
         this.queue_name = queue_name;
         this.slot_time = slot_time;
         this.hour = hour;
         this.min = min;
         this.numuser=numuser;
         this.current_user = current_user;
+        this.current_pos = current_pos;
     }
 
     public String getId() {
@@ -75,5 +76,12 @@ public class Queue {
         this.current_user = current_user;
     }
 
+    public Integer getCurrent_pos() {
+        return current_pos;
+    }
+
+    public void setCurrent_pos(Integer current_pos) {
+        this.current_pos = current_pos;
+    }
 }
 

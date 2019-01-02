@@ -18,6 +18,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".AccesActivity"></activity>
+        <service android:name=".ServiceActivity"></service>
     </application>
 
 </manifest>
