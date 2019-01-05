@@ -1,6 +1,10 @@
 package victor.pacheco.userqueuemanager;
 
 import android.content.Intent;
+
+
+
+import java.util.UUID;
 import android.icu.text.TimeZoneFormat;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -24,6 +28,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Random;
 import java.util.Timer;
 
 import javax.annotation.Nullable;
@@ -74,12 +79,13 @@ public class AccesActivity extends AppCompatActivity {
                     q.setId(doc.getId());
                     if(q.getId().equals(queueId)){
                         colaencontrada=true;
-                        FindUser();
-
                     }
                 }
                 if(colaencontrada==false){
                     Toast.makeText(AccesActivity.this, "The queueId doesn't exist.", Toast.LENGTH_SHORT).show();
+                }
+                else{
+                    FindUser();
                 }
 
             }
@@ -94,7 +100,8 @@ public class AccesActivity extends AppCompatActivity {
     public void FindUser(){
         final String queueId = queue_code.getText().toString();
         final String username = user_name.getText().toString();
-        final Boolean state = false;
+        final Boolean state=false;
+
 
         db.collection("Queues").document(queueId).collection("Users").addSnapshotListener(new EventListener<QuerySnapshot>() { // actualiza la queue_set_list con
             // la lista que tenemos en firebase
@@ -111,7 +118,9 @@ public class AccesActivity extends AppCompatActivity {
                     }
                 }
                 if(userencontrado==false){
-                    CreateUser();
+
+                        CreateUser();
+
                 }
 
             }
@@ -122,12 +131,21 @@ public class AccesActivity extends AppCompatActivity {
         final String queueId = queue_code.getText().toString();
         final String username = user_name.getText().toString();
         final Boolean state = false;
+        String id;
         Calendar calendar = Calendar.getInstance(); // contine la fecha actual.
         String acces_time = DateFormat.getTimeInstance(DateFormat.DEFAULT).format(calendar.getTime()); // contiene la hora actual
 
         Integer usr_pos = -1;
+        if(username.equals("")){
 
-        user = new User(username, 0, state.equals(("true")),acces_time, usr_pos);
+            id=UUID.randomUUID().toString();
+
+        }
+        else{id=username;}
+
+        user = new User(id, 0, state.equals(("true")),acces_time, usr_pos);
+
+        final String id2=id;
         db.collection("Queues").document(queueId).collection("Users")
                 .add(user).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
             @Override
@@ -135,7 +153,7 @@ public class AccesActivity extends AppCompatActivity {
                 usr_id= documentReference.getId();
                 Intent data = new Intent();
                 data.putExtra("queueId", queueId);
-                data.putExtra("username", username);
+                data.putExtra("username", id2);
                 data.putExtra("user_id", usr_id);
                 setResult(RESULT_OK, data);
                 finish();
