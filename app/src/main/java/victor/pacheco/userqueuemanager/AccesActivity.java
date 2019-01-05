@@ -19,6 +19,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.text.DateFormat;
 import java.util.Calendar;
@@ -60,8 +61,42 @@ public class AccesActivity extends AppCompatActivity {
     public void check(){
         final String queueId = queue_code.getText().toString();
         final String username = user_name.getText().toString();
-        Boolean state = false;
+        final Boolean state = false;
 
+
+        db.collection("Queues").addSnapshotListener(new EventListener<QuerySnapshot>() { // actualiza la queue_set_list con
+            // la lista que tenemos en firebase
+            @Override
+            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                Boolean colaencontrada = false;
+                for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                    Queue q = doc.toObject(Queue.class);
+                    q.setId(doc.getId());
+                    if(q.getId().equals(queueId)){
+                        colaencontrada=true;
+                        CreateUser();
+                    }
+
+
+
+
+                }
+                if(colaencontrada==false){
+                    Toast.makeText(AccesActivity.this, "The queueId doesn't exist.", Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        });
+
+
+
+
+
+    }
+    public void CreateUser(){
+        final String queueId = queue_code.getText().toString();
+        final String username = user_name.getText().toString();
+        final Boolean state = false;
         Calendar calendar = Calendar.getInstance(); // contine la fecha actual.
         String acces_time = DateFormat.getTimeInstance(DateFormat.DEFAULT).format(calendar.getTime()); // contiene la hora actual
 
@@ -81,10 +116,7 @@ public class AccesActivity extends AppCompatActivity {
                 finish();
             }
         });
-
-
     }
-
 
 
 }
