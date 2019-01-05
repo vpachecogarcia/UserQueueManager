@@ -74,12 +74,9 @@ public class AccesActivity extends AppCompatActivity {
                     q.setId(doc.getId());
                     if(q.getId().equals(queueId)){
                         colaencontrada=true;
-                        CreateUser();
+                        FindUser();
+
                     }
-
-
-
-
                 }
                 if(colaencontrada==false){
                     Toast.makeText(AccesActivity.this, "The queueId doesn't exist.", Toast.LENGTH_SHORT).show();
@@ -93,6 +90,34 @@ public class AccesActivity extends AppCompatActivity {
 
 
     }
+
+    public void FindUser(){
+        final String queueId = queue_code.getText().toString();
+        final String username = user_name.getText().toString();
+        final Boolean state = false;
+
+        db.collection("Queues").document(queueId).collection("Users").addSnapshotListener(new EventListener<QuerySnapshot>() { // actualiza la queue_set_list con
+            // la lista que tenemos en firebase
+            @Override
+            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                Boolean userencontrado = false;
+                for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                    User u = doc.toObject(User.class);
+
+                    if(u.getUsr_id().equals(username)){
+                        userencontrado=true;
+                        Toast.makeText(AccesActivity.this, "This user already exists.", Toast.LENGTH_SHORT).show();
+
+                    }
+                }
+                if(userencontrado==false){
+                    CreateUser();
+                }
+
+            }
+        });
+    }
+
     public void CreateUser(){
         final String queueId = queue_code.getText().toString();
         final String username = user_name.getText().toString();
