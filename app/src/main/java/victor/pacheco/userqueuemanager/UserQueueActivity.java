@@ -15,13 +15,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FieldPath;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -31,6 +36,7 @@ public class UserQueueActivity extends AppCompatActivity {
     private Integer wt;
     private String queueId;
     private String username;
+    private String usr_id;
     public boolean absent=false;
     private boolean called = false;
     private Button leave;
@@ -44,6 +50,7 @@ public class UserQueueActivity extends AppCompatActivity {
     public static final String ID = "id";
     public static final String QUEUE = "queue";
     public static final String WT_SET = "wt_seted";
+    public static final String USR_ID = "usr_id";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +83,7 @@ public class UserQueueActivity extends AppCompatActivity {
             Intent intent = new Intent(this, AccesActivity.class);
             intent.putExtra("queueId", queueId);
             intent.putExtra("username", username);
+            intent.putExtra("user_id", usr_id);
             startActivityForResult(intent, CREATE_USER);
         }
         // De lo contrario llamamos a las funciones que se encargan de actualizar el tiempo de espera y de notificarnos si es nuestro turno
@@ -86,20 +94,13 @@ public class UserQueueActivity extends AppCompatActivity {
 
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        /*if(!(username.equals("") && queueId.equals(""))) {
-            startService();
-        }*/
-    }
-
     // función para iniciar el servicio que realizará operaciones aun con la aplicación matada
     public void startService (){
         Intent serviceIntent = new Intent(this, ServiceActivity.class);
         serviceIntent.putExtra("wt", Integer.valueOf(wt));
         serviceIntent.putExtra("queueId", queueId);
         serviceIntent.putExtra("username", username);
+        serviceIntent.putExtra("user_id", usr_id);
         startService(serviceIntent);
     }
 
@@ -110,35 +111,27 @@ public class UserQueueActivity extends AppCompatActivity {
 
     public void UserWillBeBack(){
         // Cuando presionamos el botón de ahora vuelvo, si estabamos ausentes nos devuelve al modo normal y viceversa
-        db.collection("Queues").document(queueId).collection("Users")
-                .whereEqualTo("usr_id", username)
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot doc : task.getResult()) {
-                                User u = doc.toObject(User.class);
-                                if (!u.isState()){
-                                    db.collection("Queues").document(queueId).collection("Users")
-                                            .document(doc.getId()).update("state", true);
-                                    waiting_time.setText("You are in absent mode");
-                                    wt_seted = false;
-                                    absent = true;
-                                    stopService();
-                                }
-                                else {
-                                    db.collection("Queues").document(queueId).collection("Users")
-                                            .document(doc.getId()).update("state", false);
-                                    absent = false;
-                                    set_wt(queueId,username);
-                                }
-
-                            }
-                        }
-                    }
-                });
-
+        db.collection("Queues").document(queueId).collection("Users").document(usr_id)
+                .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot doc) {
+                User u = doc.toObject(User.class);
+                if (!u.isState()){
+                    db.collection("Queues").document(queueId).collection("Users")
+                            .document(doc.getId()).update("state", true);
+                    waiting_time.setText("You are in absent mode");
+                    wt_seted = false;
+                    absent = true;
+                    stopService();
+                }
+                else {
+                    db.collection("Queues").document(queueId).collection("Users")
+                            .document(doc.getId()).update("state", false);
+                    absent = false;
+                    set_wt(queueId,username);
+                }
+            }
+        });
     }
     // Mostramos un alertdialog si pulsa sobre dejar la cola. Si afirma, eliminamos el usuario de firestore así como las sharedPreferences
     public void deleteUser(){
@@ -147,22 +140,17 @@ public class UserQueueActivity extends AppCompatActivity {
         builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                // Accedemos ala colección Usuario cuyo id es el nuestro.
-                db.collection("Queues").document(queueId).collection("Users")
-                        .whereEqualTo("usr_id", username)
-                        .get()
-                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                if (task.isSuccessful()) {
-                                    for (QueryDocumentSnapshot doc : task.getResult()) {
-                                        db.collection("Queues").document(queueId).collection("Users").document(doc.getId()).delete();
-                                    }
-                                }
-                            }
-                        });
+                // Accedemos a la colección Usuario y borramos el documento de nuestro Usuario
+                db.collection("Queues").document(queueId).collection("Users").document(usr_id)
+                        .delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Toast.makeText(UserQueueActivity.this, "Thanks for using our App", Toast.LENGTH_SHORT).show();
+                    }
+                });
                 username="";
                 queueId="";
+                usr_id="";
                 wt_seted = false;
                 getSharedPreferences("sharedPrefs", 0).edit().clear().apply();
                 finish();
@@ -181,8 +169,9 @@ public class UserQueueActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK){
                     queueId = data.getStringExtra("queueId");
                     username = data.getStringExtra("username");
+                    usr_id= data.getStringExtra("user_id");
                     set_wt(queueId, username);
-                    saveData(queueId, username, wt_seted);
+                    saveData(queueId, username, wt_seted, usr_id);
                 }
                 break;
             default:
@@ -195,15 +184,17 @@ public class UserQueueActivity extends AppCompatActivity {
         queueId = sharedPreferences.getString(QUEUE,"");
         username = sharedPreferences.getString(ID,"");
         wt_seted = sharedPreferences.getBoolean(WT_SET, false);
+        usr_id = sharedPreferences.getString(USR_ID, "");
     }
     // Guarda los datos queueId, username y wt_seted mediante sharedPreferences
-    public void saveData(String queueId, String username, Boolean wt_seted){
+    public void saveData(String queueId, String username, Boolean wt_seted, String usr_id){
         SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
         editor.putString(QUEUE, queueId);
         editor.putString(ID, username);
         editor.putBoolean(WT_SET, wt_seted);
+        editor.putString(USR_ID,usr_id);
         editor.apply();
     }
     // Inicia el tiempo de espera y llama al servicio, que partirá de ese tiempo de espera
@@ -215,7 +206,7 @@ public class UserQueueActivity extends AppCompatActivity {
                 if (!wt_seted) {
                     Queue q = doc.toObject(Queue.class);
                     // si eres el primero, te pide que entres directamente y anula que se muestre el wt por otro lado y que se te vuelva a llamar.
-                    if(q.getNumuser()==0){
+                    if(q.getNumuser()==0 || q.getCurrent_user().equals(username)){
                         waiting_time.setText("Please, come in !");
                         called = true;
                         wt_seted = true;
@@ -227,21 +218,8 @@ public class UserQueueActivity extends AppCompatActivity {
                         wt_seted = true;
                         actualiza_wt(queueId, username);
                         db.collection("Queues").document(queueId).collection("Users")
-                                .whereEqualTo("usr_id", username)
-                                .get()
-                                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                        if (task.isSuccessful()) {
-                                            for (QueryDocumentSnapshot doc : task.getResult()) {
-                                                db.collection("Queues").document(queueId).collection("Users")
-                                                        .document(doc.getId()).update("waiting_time", wt);
-                                                waiting_time.setText(wt.toString());
-
-                                            }
-                                        }
-                                    }
-                                });
+                                .document(usr_id).update("waiting_time", wt);
+                        waiting_time.setText(wt.toString());
                     }
 
                 }
@@ -255,7 +233,7 @@ public class UserQueueActivity extends AppCompatActivity {
                 @Override
                 public void onEvent(@Nullable DocumentSnapshot doc, @Nullable FirebaseFirestoreException e) {
                     Queue q = doc.toObject(Queue.class);
-                    if (q.getCurrent_user().equals(username)) {
+                    if (q.getCurrent_user().equals(username) && !absent) {
                         waiting_time.setText("Please, come in !");
                         called = true;
 
@@ -271,30 +249,26 @@ public class UserQueueActivity extends AppCompatActivity {
         db.collection("Queues").document(queueId).collection("Users").addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                db.collection("Queues").document(queueId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                db.collection("Queues").document(queueId).collection("Users").document(usr_id)
+                        .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                     @Override
-                    public void onEvent(@Nullable DocumentSnapshot doc, @Nullable FirebaseFirestoreException e) {
-                        db.collection("Queues").document(queueId).collection("Users")
-                                .whereEqualTo("usr_id", username)
-                                .get()
-                                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                        if (task.isSuccessful()) {
-                                            for (QueryDocumentSnapshot doc : task.getResult()) {
-                                                User u = doc.toObject(User.class);
-                                                wt = u.getWaiting_time();
-                                                if (wt == 0 && !called && !absent) {
-                                                    waiting_time.setText("You are about to be called...");
-                                                } else if (wt!=0 && !called && !absent) waiting_time.setText(wt.toString());
-                                            }
-                                        }
-                                    }
-                                });
+                    public void onSuccess(DocumentSnapshot doc) {
+                        User u = doc.toObject(User.class);
+                        wt = u.getWaiting_time();
+                        if (wt == 0 && !called && !absent) {
+                            waiting_time.setText("You are about to be called...");
+                        } else if (wt!=0 && !called && !absent) waiting_time.setText(wt.toString());
                     }
                 });
+
             }
         });
+    }
+    // Detectamos si alguien sale de la lista por delante nuestro, para así actualizar el wt.
+    private void cambios_posicion(){
+
+
+
     }
 
 }

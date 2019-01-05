@@ -12,6 +12,8 @@ import android.support.v4.app.NotificationCompat;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -28,10 +30,9 @@ public class ServiceActivity extends Service {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private String queueId;
     private String username;
+    private String usr_id;
     private PendingIntent pendingIntent;
     private boolean called = false;
-    public boolean estado_user=false;
-    public boolean estado_delete=false;
 
     @Override
     public void onCreate() {
@@ -45,6 +46,7 @@ public class ServiceActivity extends Service {
         queueId = intent.getStringExtra("queueId");
         username = intent.getStringExtra("username");
         wt = intent.getIntExtra("wt", -1);
+        usr_id = intent.getStringExtra("user_id");
 
         // Cremos una notificación de la clase NotificationActivity
         Intent notificationIntent = new Intent(this, UserQueueActivity.class);
@@ -74,24 +76,15 @@ public class ServiceActivity extends Service {
 
             @Override
             public void onTick(long l) {
-                // Accedemos ala colección Usuario cuyo id es el nuestro.
+                //Actualizamos el tiempo de espera en firestore
                 db.collection("Queues").document(queueId).collection("Users")
-                        .whereEqualTo("usr_id", username)
-                        .get()
-                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                if (task.isSuccessful()) {
-                                    // Hace falta este for ??
-                                    for (QueryDocumentSnapshot doc : task.getResult()) {
-                                        //Actualizamos el tiempo de espera en firestore
-                                        db.collection("Queues").document(queueId).collection("Users")
-                                                .document(doc.getId()).update("waiting_time", ServiceActivity.this.wt);
+                        .document(usr_id).update("waiting_time", ServiceActivity.this.wt).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(ServiceActivity.this, "Something went wrong. Please contact with the manager", Toast.LENGTH_SHORT).show();
+                    }
+                });
 
-                                    }
-                                }
-                            }
-                        });
                 wt--;
             }
 
@@ -99,24 +92,14 @@ public class ServiceActivity extends Service {
             // Cuando acaba la cuenta atrás, realiza las siguientes operaciones
             public void onFinish() {
                 // Entramos en la colección de nuestro Usuario y ponemos el tiempo de espera a 0
-                db.collection("Queues")
-                        .document(queueId)
-                        .collection("Users")
-                        .whereEqualTo("usr_id", username)
-                        .get()
-                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                if (task.isSuccessful()) {
-                                    // Hace falta este for ??
-                                    for (QueryDocumentSnapshot doc : task.getResult()) {
-                                        db.collection("Queues").document(queueId).collection("Users")
-                                                .document(doc.getId()).update("waiting_time", 0);
-
-                                    }
-                                }
-                            }
-                        });
+                db.collection("Queues").document(queueId).collection("Users").document(usr_id)
+                        .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                    @Override
+                    public void onSuccess(DocumentSnapshot doc) {
+                        db.collection("Queues").document(queueId).collection("Users")
+                                .document(doc.getId()).update("waiting_time", 0);
+                    }
+                });
             }
         }.start();
     }

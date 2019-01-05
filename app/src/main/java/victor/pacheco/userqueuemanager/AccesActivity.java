@@ -11,6 +11,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -33,6 +34,7 @@ public class AccesActivity extends AppCompatActivity {
     private Button btn_acces;
     private User user;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private String usr_id;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,15 +65,23 @@ public class AccesActivity extends AppCompatActivity {
         Calendar calendar = Calendar.getInstance(); // contine la fecha actual.
         String acces_time = DateFormat.getTimeInstance(DateFormat.DEFAULT).format(calendar.getTime()); // contiene la hora actual
 
-        user = new User(username, 0, state.equals(("true")),acces_time);
-        db.collection("Queues").document(queueId).collection("Users").add(user);
+        Integer usr_pos = -1;
 
-        // Una vez hemos accedido a la cola y actualizado datos en Firestore, abrimos UserQueueActivity
-        Intent data = new Intent();
-        data.putExtra("queueId", queueId);
-        data.putExtra("username", username);
-        setResult(RESULT_OK, data);
-        finish();
+        user = new User(username, 0, state.equals(("true")),acces_time, usr_pos);
+        db.collection("Queues").document(queueId).collection("Users")
+                .add(user).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+            @Override
+            public void onSuccess(DocumentReference documentReference) {
+                usr_id= documentReference.getId();
+                Intent data = new Intent();
+                data.putExtra("queueId", queueId);
+                data.putExtra("username", username);
+                data.putExtra("user_id", usr_id);
+                setResult(RESULT_OK, data);
+                finish();
+            }
+        });
+
 
     }
 

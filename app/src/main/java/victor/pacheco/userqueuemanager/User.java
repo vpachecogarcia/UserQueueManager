@@ -8,13 +8,15 @@ public class User {
     private int waiting_time;
     private boolean state = false;
     private String acces_time;
+    private Integer usr_pos;
 
     User(){}
-    public User(String usr_id, int waiting_time, boolean state, String acces_time) {
+    public User(String usr_id, int waiting_time, boolean state, String acces_time, Integer usr_pos) {
         this.usr_id = usr_id;
         this.waiting_time = waiting_time;
         this.state = state;
         this.acces_time = acces_time;
+        this.usr_pos = usr_pos;
 
     }
 
@@ -49,5 +51,13 @@ public class User {
 
     public void setAcces_time(String acces_time) {
         this.acces_time = acces_time;
+    }
+
+    public Integer getUsr_pos() {
+        return usr_pos;
+    }
+
+    public void setUsr_pos(Integer usr_pos) {
+        this.usr_pos = usr_pos;
     }
 }
