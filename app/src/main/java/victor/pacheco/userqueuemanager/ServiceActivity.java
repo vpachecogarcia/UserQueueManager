@@ -11,15 +11,12 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import static victor.pacheco.userqueuemanager.NotificationActivity.CHANNEL_ID;
@@ -27,6 +24,8 @@ import static victor.pacheco.userqueuemanager.NotificationActivity.CHANNEL_ID;
 public class ServiceActivity extends Service {
 
     private Integer wt;
+    private Integer pos;
+    private Integer slot;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private String queueId;
     private String username;
@@ -63,15 +62,69 @@ public class ServiceActivity extends Service {
         //Alertará si llega el turno del usuario
         turn_alert();
         // Actualiza el tiempo de espera
+        obten_datos();
         actualiza_wt();
 
         return START_NOT_STICKY; // Determina que sucede cuando el sistema mata nuestro servicio. Non Stiky significa que no hacemos nada cuando esto sucede.
+    }
 
+    private void obten_datos() {
+        db.collection("Queues").document(queueId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                Queue q = documentSnapshot.toObject(Queue.class);
+                slot = q.getSlot_time();
+            }
+        });
+        db.collection("Queues").document(queueId).collection("Users").document(usr_id).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                User u = documentSnapshot.toObject(User.class);
+                if (u.getUsr_pos() == -1){
+                    obten_datos();
+                }
+                else cambios_pos();
+            }
+
+        });
+    }
+
+    private void cambios_pos() {
+        db.collection("Queues").document(queueId).collection("Users").addSnapshotListener(new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(@javax.annotation.Nullable QuerySnapshot queryDocumentSnapshots, @javax.annotation.Nullable final FirebaseFirestoreException e) {
+                db.collection("Queues").document(queueId).collection("Users").document(usr_id).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                    @Override
+                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                        User u = documentSnapshot.toObject(User.class);
+                        Integer new_pos = u.getUsr_pos();
+                        Toast.makeText(ServiceActivity.this, "new pos "+ new_pos, Toast.LENGTH_SHORT).show();
+                        if(new_pos != pos){
+                            pos = new_pos;
+                           wt = wt -slot;
+                           if (wt>=1){
+                           }
+                           else {
+                               db.collection("Queues").document(queueId).collection("Users").document(usr_id)
+                                       .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                   @Override
+                                   public void onSuccess(DocumentSnapshot doc) {
+                                       db.collection("Queues").document(queueId).collection("Users")
+                                               .document(doc.getId()).update("waiting_time", 0);
+                                   }
+                               });
+                           }
+                        }
+                    }
+                });
+            }
+        });
     }
 
 
     private void actualiza_wt() {
         //Iniciamos un temporizador desde el tiempo de espera establecido hasta 0. A cada minuto, actualizamos el tiempo de espera en firestore.
+
         new CountDownTimer((wt * 60 * 1000), 60000) {
 
             @Override

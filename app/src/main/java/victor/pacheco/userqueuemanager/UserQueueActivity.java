@@ -105,6 +105,8 @@ public class UserQueueActivity extends AppCompatActivity {
     }
 
     public void stopService(){
+        // Crea un subproceso de trabajo predeterminado que ejecute todas las intents enviadas a onStartCommand(),
+        // independientemente del subproceso principal de la aplicación.
         Intent serviceIntent = new Intent(this, ServiceActivity.class);
         stopService(serviceIntent);
     }
@@ -153,6 +155,7 @@ public class UserQueueActivity extends AppCompatActivity {
                 usr_id="";
                 wt_seted = false;
                 getSharedPreferences("sharedPrefs", 0).edit().clear().apply();
+                stopService();
                 finish();
             }
 
