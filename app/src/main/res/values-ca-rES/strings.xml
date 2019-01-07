@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">UserQueueManager</string>
+    <string name="text_waiting_label">El teu temps aproximat d\'espera és:</string>
+    <string name="textView5">Gràcies per esperar</string>
+    <string name="queue_code_label">CODI DE LA CUA</string>
+    <string name="username_label">USUARI (opcional)</string>
+    <string name="btn_acces">ACCEDEIX A LA CUA</string>
+    <string name="btn_leave">MARXAR DE LA CUA</string>
+    <string name="btn_be_back">ARA TORNO</string>
+</resources>
