@@ -4,8 +4,6 @@ package victor.pacheco.userqueuemanager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-
-import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,19 +12,12 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FieldPath;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-
-import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -222,7 +213,7 @@ public class UserQueueActivity extends AppCompatActivity {
                         actualiza_wt(queueId, username);
                         db.collection("Queues").document(queueId).collection("Users")
                                 .document(usr_id).update("waiting_time", wt);
-                        waiting_time.setText(wt.toString());
+                        waiting_time.setText(wt.toString() + " minutes");
                     }
 
                 }
@@ -260,18 +251,11 @@ public class UserQueueActivity extends AppCompatActivity {
                         wt = u.getWaiting_time();
                         if (wt == 0 && !called && !absent) {
                             waiting_time.setText("You are about to be called...");
-                        } else if (wt!=0 && !called && !absent) waiting_time.setText(wt.toString());
+                        } else if (wt!=0 && !called && !absent) waiting_time.setText(wt.toString() + " minutes");
                     }
                 });
 
             }
         });
     }
-    // Detectamos si alguien sale de la lista por delante nuestro, para así actualizar el wt.
-    private void cambios_posicion(){
-
-
-
-    }
-
 }
