@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">UserQueueManager</string>
+    <string name="btn_be_back">JE REVIENS TOUT DE SUITE</string>
+    <string name="queue_code_label">CODE DE LA QUEUE</string>
+    <string name="textView5">Merci d\'avoir attendu</string>
+    <string name="btn_leave">LAISSEZ LE COLA</string>
+    <string name="text_waiting_label">Votre temps d\'attente approximatif est:</string>
+    <string name="username_label">UTILISATEUR (facultatif)</string>
+    <string name="btn_acces">ACCÉS À LA QUEUE</string>
+</resources>
