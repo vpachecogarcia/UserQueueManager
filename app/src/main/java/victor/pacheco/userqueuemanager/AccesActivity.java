@@ -41,6 +41,9 @@ public class AccesActivity extends AppCompatActivity {
     private User user;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private String usr_id;
+    private String hour;
+    private String min;
+    private String acces_time;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,15 +55,12 @@ public class AccesActivity extends AppCompatActivity {
         user_name = findViewById(R.id.username);
         btn_acces = findViewById(R.id.btn_acces);
 
-
         btn_acces.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 check();
             }
         });
-
-
     }
     // Función para inicializar el campo current_user con el primer Usuario que entre en la cola
     public void check(){
@@ -68,32 +68,39 @@ public class AccesActivity extends AppCompatActivity {
         final String username = user_name.getText().toString();
         final Boolean state = false;
 
+        Calendar calendar = Calendar.getInstance(); // contine la fecha actual.
+        acces_time = DateFormat.getTimeInstance(DateFormat.DEFAULT).format(calendar.getTime()); // contiene la hora actual
 
-        db.collection("Queues").addSnapshotListener(new EventListener<QuerySnapshot>() { // actualiza la queue_set_list con
-            // la lista que tenemos en firebase
-            @Override
-            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                Boolean colaencontrada = false;
-                for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                    Queue q = doc.toObject(Queue.class);
-                    q.setId(doc.getId());
-                    if(q.getId().equals(queueId)){
-                        colaencontrada=true;
+        db.collection("Queues").whereEqualTo("queue_name", queueId)
+                .get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                @Override
+                public void onSuccess(QuerySnapshot doc) {
+                    if(doc.isEmpty()){
+                        Toast.makeText(AccesActivity.this, "The Queue " + queueId + " doesn't exists.", Toast.LENGTH_LONG).show();
+                    }
+                    else {
+                        db.collection("Queues").document(queueId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                            @Override
+                            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                Queue q = documentSnapshot.toObject(Queue.class);
+                                hour = q.getHour().toString();
+                                min = q.getMin().toString();
+                                Integer a_t_Entity = Integer.valueOf(hour + min);
+                                String hour_s = acces_time.substring(0, 2);
+                                String min_s = acces_time.substring(3, 5);
+                                Integer a_t_User = Integer.parseInt(hour_s.concat(min_s));
+                                if (a_t_Entity > a_t_User) {
+                                    FindUser();
+                                }
+                                else {
+                                    Toast.makeText(AccesActivity.this, "The Queue " + queueId + " is closed.", Toast.LENGTH_LONG).show();
+                                }
+                            }
+                        });
                     }
                 }
-                if(colaencontrada==false){
-                    Toast.makeText(AccesActivity.this, "The queueId doesn't exist.", Toast.LENGTH_SHORT).show();
-                }
-                else{
-                    FindUser();
-                }
 
-            }
-        });
-
-
-
-
+                });
 
     }
 
@@ -102,27 +109,16 @@ public class AccesActivity extends AppCompatActivity {
         final String username = user_name.getText().toString();
         final Boolean state=false;
 
-
-        db.collection("Queues").document(queueId).collection("Users").addSnapshotListener(new EventListener<QuerySnapshot>() { // actualiza la queue_set_list con
-            // la lista que tenemos en firebase
+        db.collection("Queues").document(queueId).collection("Users").whereEqualTo("usr_id ",username)
+                .get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
             @Override
-            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                Boolean userencontrado = false;
-                for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                    User u = doc.toObject(User.class);
-
-                    if(u.getUsr_id().equals(username)){
-                        userencontrado=true;
-                        Toast.makeText(AccesActivity.this, "This user already exists.", Toast.LENGTH_SHORT).show();
-
-                    }
+            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                if(queryDocumentSnapshots.isEmpty()){
+                    CreateUser();
                 }
-                if(userencontrado==false){
-
-                        CreateUser();
-
+                else {
+                    Toast.makeText(AccesActivity.this, "This user already exists.", Toast.LENGTH_SHORT).show();
                 }
-
             }
         });
     }
@@ -132,8 +128,6 @@ public class AccesActivity extends AppCompatActivity {
         final String username = user_name.getText().toString();
         final Boolean state = false;
         String id;
-        Calendar calendar = Calendar.getInstance(); // contine la fecha actual.
-        String acces_time = DateFormat.getTimeInstance(DateFormat.DEFAULT).format(calendar.getTime()); // contiene la hora actual
 
         Integer usr_pos = -1;
         if(username.equals("")){
