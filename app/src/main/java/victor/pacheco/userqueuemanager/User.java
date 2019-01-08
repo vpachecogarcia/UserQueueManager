@@ -7,11 +7,11 @@ public class User {
     private String usr_id;
     private int waiting_time;
     private boolean state = false;
-    private String acces_time;
+    private Date acces_time;
     private Integer usr_pos;
 
     User(){}
-    public User(String usr_id, int waiting_time, boolean state, String acces_time, Integer usr_pos) {
+    public User(String usr_id, int waiting_time, boolean state, Date acces_time, Integer usr_pos) {
         this.usr_id = usr_id;
         this.waiting_time = waiting_time;
         this.state = state;
@@ -45,11 +45,11 @@ public class User {
     }
 
 
-    public String getAcces_time() {
+    public Date getAcces_time() {
         return acces_time;
     }
 
-    public void setAcces_time(String acces_time) {
+    public void setAcces_time(Date acces_time) {
         this.acces_time = acces_time;
     }
 

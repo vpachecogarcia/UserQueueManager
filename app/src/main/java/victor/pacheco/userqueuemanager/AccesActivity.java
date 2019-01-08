@@ -3,7 +3,7 @@ package victor.pacheco.userqueuemanager;
 import android.content.Intent;
 
 
-
+import java.text.SimpleDateFormat;
 import java.util.UUID;
 import android.icu.text.TimeZoneFormat;
 import android.support.annotation.NonNull;
@@ -43,7 +43,7 @@ public class AccesActivity extends AppCompatActivity {
     private String usr_id;
     private int hora;
     private int min;
-    private String acces_time;
+    private Date acces_time;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,10 +64,12 @@ public class AccesActivity extends AppCompatActivity {
     }
     // Función para inicializar el campo current_user con el primer Usuario que entre en la cola
     public void check(){
+        btn_acces.setEnabled(false);
         final String queueId = queue_code.getText().toString();
 
         Calendar calendar = Calendar.getInstance(); // contine la fecha actual.
-        acces_time = DateFormat.getTimeInstance(DateFormat.DEFAULT).toString();
+        // SimpleDateFormat
+        acces_time = calendar.getTime();
         hora = calendar.get(Calendar.HOUR_OF_DAY);
         min = calendar.get(Calendar.MINUTE);
 
