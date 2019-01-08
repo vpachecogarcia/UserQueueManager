@@ -33,6 +33,7 @@ public class UserQueueActivity extends AppCompatActivity {
     private Button leave;
     private Button back;
     private boolean wt_seted = false;
+    private Integer pos;
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -109,6 +110,8 @@ public class UserQueueActivity extends AppCompatActivity {
             @Override
             public void onSuccess(DocumentSnapshot doc) {
                 User u = doc.toObject(User.class);
+                pos = u.getUsr_pos();
+
                 if (!u.isState()){
                     db.collection("Queues").document(queueId).collection("Users")
                             .document(doc.getId()).update("state", true);
@@ -117,9 +120,41 @@ public class UserQueueActivity extends AppCompatActivity {
                     absent = true;
                 }
                 else {
-                    db.collection("Queues").document(queueId).collection("Users")
-                            .document(doc.getId()).update("state", false);
-                    absent = false;
+                    db.collection("Queues").document(queueId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                        @Override
+                        public void onSuccess(DocumentSnapshot documentSnapshot) {
+                            Queue q = documentSnapshot.toObject(Queue.class);
+                            Integer current = q.getCurrent_pos();
+                            if(pos < current){
+                                // Accedemos a la colección Usuario y borramos el documento de nuestro Usuario
+                                db.collection("Queues").document(queueId).collection("Users").document(usr_id)
+                                        .delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        Toast.makeText(UserQueueActivity.this, "I've missed your turn. Please, log in again", Toast.LENGTH_SHORT).show();
+                                        username="";
+                                        queueId="";
+                                        usr_id="";
+                                        wt_seted = false;
+                                        getSharedPreferences("sharedPrefs", 0).edit().clear().apply();
+                                        stopService();
+                                        onRestart();
+                                    }
+                                });
+                            }
+                            else{
+                                db.collection("Queues").document(queueId).collection("Users").document(usr_id)
+                                        .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                    @Override
+                                    public void onSuccess(DocumentSnapshot doc) {
+                                        db.collection("Queues").document(queueId).collection("Users")
+                                                .document(doc.getId()).update("state", false);
+                                        absent = false;
+                                    }
+                                });
+                            }
+                        }
+                    });
                 }
             }
         });
@@ -210,6 +245,7 @@ public class UserQueueActivity extends AppCompatActivity {
                         startService();
                         wt_seted = true;
                         actualiza_wt(queueId, username);
+                        notifica();
                         db.collection("Queues").document(queueId).collection("Users")
                                 .document(usr_id).update("waiting_time", wt);
                     }

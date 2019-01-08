@@ -30,8 +30,10 @@ public class ServiceActivity extends Service {
     private String queueId;
     private String username;
     private String usr_id;
+    private Integer current;
     private PendingIntent pendingIntent;
     private boolean called = false;
+
 
     @Override
     public void onCreate() {
@@ -74,6 +76,7 @@ public class ServiceActivity extends Service {
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 Queue q = documentSnapshot.toObject(Queue.class);
                 slot = q.getSlot_time();
+                current = q.getCurrent_pos();
             }
         });
         db.collection("Queues").document(queueId).collection("Users").document(usr_id).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
@@ -83,7 +86,10 @@ public class ServiceActivity extends Service {
                 if (u.getUsr_pos() == -1){
                     obten_datos();
                 }
-                else cambios_pos();
+                else {
+                    pos = u.getUsr_pos();
+                    cambios_pos();
+                }
             }
 
         });
@@ -118,6 +124,35 @@ public class ServiceActivity extends Service {
                 });
             }
         });
+
+        db.collection("Queues").document(queueId).addSnapshotListener(new EventListener<DocumentSnapshot>() {
+            @Override
+            public void onEvent(@javax.annotation.Nullable DocumentSnapshot documentSnapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                db.collection("Queues").document(queueId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                    @Override
+                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                        Queue q = documentSnapshot.toObject(Queue.class);
+                        Integer new_current = q.getCurrent_pos();
+                        if (current != new_current) {
+                            wt = wt - slot;
+                            if (wt>=1){
+                            }
+                            else {
+                                db.collection("Queues").document(queueId).collection("Users").document(usr_id)
+                                        .get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                    @Override
+                                    public void onSuccess(DocumentSnapshot doc) {
+                                        db.collection("Queues").document(queueId).collection("Users")
+                                                .document(doc.getId()).update("waiting_time", 0);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
     }
 
 

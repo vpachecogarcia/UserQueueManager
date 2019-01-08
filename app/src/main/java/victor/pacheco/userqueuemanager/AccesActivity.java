@@ -65,6 +65,7 @@ public class AccesActivity extends AppCompatActivity {
                 public void onSuccess(QuerySnapshot doc) {
                     if(doc.isEmpty()){
                         Toast.makeText(AccesActivity.this, "The Queue " + queueId + " doesn't exists.", Toast.LENGTH_LONG).show();
+                        btn_acces.setEnabled(true);
                     }
                     else {
                         db.collection("Queues").document(queueId).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
@@ -76,9 +77,11 @@ public class AccesActivity extends AppCompatActivity {
 
                                 if ( hora > h) {
                                     Toast.makeText(AccesActivity.this, "The Queue " + queueId + " is closed.", Toast.LENGTH_LONG).show();
+                                    btn_acces.setEnabled(true);
                                 }
                                 else if (hora == h &&  min > m ){
                                     Toast.makeText(AccesActivity.this, "The Queue " + queueId + " is closed.", Toast.LENGTH_LONG).show();
+                                    btn_acces.setEnabled(true);
                                 }
                                 else FindUser();
                             }
