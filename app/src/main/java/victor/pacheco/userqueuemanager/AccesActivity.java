@@ -2,11 +2,7 @@ package victor.pacheco.userqueuemanager;
 
 import android.content.Intent;
 
-
-import java.text.SimpleDateFormat;
 import java.util.UUID;
-import android.icu.text.TimeZoneFormat;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -14,24 +10,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
-import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Random;
-import java.util.Timer;
-
-import javax.annotation.Nullable;
 
 public class AccesActivity extends AppCompatActivity {
 
@@ -68,7 +54,6 @@ public class AccesActivity extends AppCompatActivity {
         final String queueId = queue_code.getText().toString();
 
         Calendar calendar = Calendar.getInstance(); // contine la fecha actual.
-        // SimpleDateFormat
         acces_time = calendar.getTime();
         hora = calendar.get(Calendar.HOUR_OF_DAY);
         min = calendar.get(Calendar.MINUTE);

@@ -115,13 +115,11 @@ public class UserQueueActivity extends AppCompatActivity {
                     waiting_time.setText("You are in absent mode");
                     wt_seted = false;
                     absent = true;
-                    stopService();
                 }
                 else {
                     db.collection("Queues").document(queueId).collection("Users")
                             .document(doc.getId()).update("state", false);
                     absent = false;
-                    set_wt(queueId,username);
                 }
             }
         });
@@ -147,7 +145,8 @@ public class UserQueueActivity extends AppCompatActivity {
                 wt_seted = false;
                 getSharedPreferences("sharedPrefs", 0).edit().clear().apply();
                 stopService();
-                finish();
+                onRestart();
+
             }
 
         });
@@ -213,7 +212,6 @@ public class UserQueueActivity extends AppCompatActivity {
                         actualiza_wt(queueId, username);
                         db.collection("Queues").document(queueId).collection("Users")
                                 .document(usr_id).update("waiting_time", wt);
-                        waiting_time.setText(wt.toString() + " minutes");
                     }
 
                 }
@@ -249,9 +247,9 @@ public class UserQueueActivity extends AppCompatActivity {
                     public void onSuccess(DocumentSnapshot doc) {
                         User u = doc.toObject(User.class);
                         wt = u.getWaiting_time();
-                        if (wt == 0 && !called && !absent) {
+                        if (wt <= 0 && !called && !absent) {
                             waiting_time.setText("You are about to be called...");
-                        } else if (wt!=0 && !called && !absent) waiting_time.setText(wt.toString() + " minutes");
+                        } else if (wt >0 && !called && !absent) waiting_time.setText(wt.toString() + " minutes");
                     }
                 });
 

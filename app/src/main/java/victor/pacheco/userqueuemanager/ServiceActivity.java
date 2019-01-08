@@ -98,7 +98,6 @@ public class ServiceActivity extends Service {
                     public void onSuccess(DocumentSnapshot documentSnapshot) {
                         User u = documentSnapshot.toObject(User.class);
                         Integer new_pos = u.getUsr_pos();
-                        Toast.makeText(ServiceActivity.this, "new pos "+ new_pos, Toast.LENGTH_SHORT).show();
                         if(new_pos != pos){
                             pos = new_pos;
                            wt = wt -slot;
